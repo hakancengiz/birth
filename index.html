@@ -179,7 +179,7 @@
         let moveLeft = false;
         let moveRight = false;
         const characterSpeed = 3;
-        let currentHead = "👼";
+        let currentHead = "bebe";
         let currentBody = "";
         let messages = [];
         let isHakanPhase = false;
@@ -188,15 +188,28 @@
 
         const character = { 
             x: gameCanvas.width / 2 - 25, 
-            y: gameCanvas.height - 140, 
-            width: 50, 
-            height: 50 
+            y: gameCanvas.height - 200, 
+            width: 75, 
+            height: 75 
         };
         
         let cakes = [];
         let clouds = [];
         let floatingTexts = [];
         
+        // Resimleri önceden yükle
+        const characterImages = {
+            bebe: new Image(),
+            cocuk: new Image(),
+            buyuk: new Image(),
+            hc: new Image()
+        };
+
+        characterImages.bebe.src = "https://raw.githubusercontent.com/hakancengiz/birth/main/resources/bebe.png";
+        characterImages.cocuk.src = "https://raw.githubusercontent.com/hakancengiz/birth/main/resources/cocuk.png";
+        characterImages.buyuk.src = "https://raw.githubusercontent.com/hakancengiz/birth/main/resources/buyuk.png";
+        characterImages.hc.src = "https://raw.githubusercontent.com/hakancengiz/birth/main/resources/hc.png";
+
         // Başlangıç bulutları
         for (let i = 0; i < 3; i++) {
             clouds.push({ 
@@ -210,7 +223,7 @@
             gameCanvas.width = fireworksCanvas.width = window.innerWidth;
             gameCanvas.height = fireworksCanvas.height = window.innerHeight;
             character.x = gameCanvas.width / 2 - 25;
-            character.y = gameCanvas.height - 140; // Zeminin üstünde kalması için
+            character.y = gameCanvas.height - 170; // Zeminin üstünde kalması için
         }
 
         function startGame() {
@@ -218,7 +231,7 @@
             score = 0;
             cakes = [];
             floatingTexts = [];
-            currentHead = "👼";
+            currentHead = "bebe";
             currentBody = "";
             isHakanPhase = false;
             messages = []; // Mesajları temizle
@@ -236,7 +249,7 @@
         }
 
         function spawnCake() {
-            const emoji = isHakanPhase ? "👨" : "🎂";
+            const emoji = isHakanPhase ? characterImages.hc : "🎂"; // "hc" resmini kullan
             cakes.push({ 
                 x: Math.random() * (gameCanvas.width - 30), 
                 y: -30, 
@@ -246,15 +259,32 @@
         }
 
         function drawCharacter(x, y) {
-            gameCtx.font = "40px Arial";
-            gameCtx.fillText(currentHead, x, y);
-            gameCtx.fillText(currentBody, x, y + 40);
+            const img = characterImages[currentHead];
+            if (img && img.complete) {
+                gameCtx.drawImage(img, x, y, character.width, character.height);
+            }
         }
 
-        function drawCake(x, y, emoji) {
-            gameCtx.font = "50px Arial";
-            gameCtx.fillText(emoji, x, y + 30);
+function drawCake(x, y, emoji) {
+    if (typeof emoji === "string") {
+        // Eğer emoji bir metinse, metin olarak çiz
+        gameCtx.font = "50px Arial";
+        gameCtx.fillText(emoji, x, y + 30);
+    } else {
+        // Eğer emoji bir resimse, resmi çiz
+        if (emoji.complete) {
+            if (emoji === characterImages.hc) {
+                // hc.png için özel boyut (85px x 85px)
+                gameCtx.drawImage(emoji, x, y, 75, 75);
+            } else {
+                // Diğer pastalar için standart boyut (30px x 30px)
+                gameCtx.drawImage(emoji, x, y, 30, 30);
+            }
+        } else {
+            console.error("Resim yüklenemedi veya tamamlanmadı:", emoji);
         }
+    }
+}
 
         function drawCloud(x, y) {
             gameCtx.fillStyle = "#FFFFFF";
@@ -290,8 +320,8 @@
                     opacity: 1, 
                     y: gameCanvas.height / 2 
                 });
-                currentHead = score === 10 ? "👧" : "👩";
-                currentBody = score === 10 ? "👚" : "👗";
+                currentHead = score === 10 ? "cocuk" : "buyuk";
+                currentBody = "";
             }
             
             if (score === 26) {
@@ -318,35 +348,39 @@
             drawCharacter(character.x, character.y);
 
             cakes.forEach((cake, index) => {
-                cake.y += cake.speed;
-                drawCake(cake.x, cake.y, cake.emoji);
-                
-                if (cake.y > gameCanvas.height) {
-                    cakes.splice(index, 1);
-                }
-                
-                if (cake.x < character.x + character.width && 
-                    cake.x + 30 > character.x && 
-                    cake.y < character.y + character.height && 
-                    cake.y + 20 > character.y) {
-                    
-                    cakes.splice(index, 1);
-                    score++;
-                    document.getElementById("score").innerText = "Skor: " + score;
+    cake.y += cake.speed;
+    drawCake(cake.x, cake.y, cake.emoji);
 
-                    if (score === 25) isHakanPhase = true;
-                    checkScoreChanges();
+    if (cake.y > gameCanvas.height) {
+        cakes.splice(index, 1);
+    }
 
-                    floatingTexts.push({ 
-                        text: "+1 Yaş", 
-                        x: character.x + 30, 
-                        y: character.y - 20, 
-                        opacity: 1 
-                    });
-                    
-                    if (score >= 27) endGame();
-                }
-            });
+    // Çarpışma kontrolü
+    const cakeWidth = (cake.emoji === characterImages.hc) ? 75 : 30; // hc.png için 85px, diğerleri için 30px
+    const cakeHeight = (cake.emoji === characterImages.hc) ? 75 : 30; // hc.png için 85px, diğerleri için 30px
+
+    if (cake.x < character.x + character.width && 
+        cake.x + cakeWidth > character.x && 
+        cake.y < character.y + character.height && 
+        cake.y + cakeHeight > character.y) {
+        
+        cakes.splice(index, 1);
+        score++;
+        document.getElementById("score").innerText = "Skor: " + score;
+
+        if (score === 25) isHakanPhase = true;
+        checkScoreChanges();
+
+        floatingTexts.push({ 
+            text: "+1 Yaş", 
+            x: character.x + 30, 
+            y: character.y - 20, 
+            opacity: 1 
+        });
+        
+        if (score >= 27) endGame();
+    }
+});
 
             floatingTexts.forEach((text, index) => {
                 gameCtx.fillStyle = `rgba(0, 128, 0, ${text.opacity})`;
